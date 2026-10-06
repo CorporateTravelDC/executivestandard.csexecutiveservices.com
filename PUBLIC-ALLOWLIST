@@ -1,0 +1,26 @@
+# PUBLIC-ALLOWLIST -- the ONLY tracked files that may reach the public mirror
+# (last matching rule wins; "!" excludes). The members-only edition -- articles/,
+# _md/, the rendered article pages, llms.txt / llm.txt / sitemap.xml (gated on
+# the members host, they index member content) -- is never listed here.
+README.md
+PUBLISHING-README.md
+PUBLIC.conf
+PUBLIC-ALLOWLIST
+config.example.json
+manifest.json
+sw.js
+robots.txt
+.well-known/security.txt
+assets/wordmark.png
+icons/*
+keys/*
+gate/*
+subscribe/*
+functions/*
+verifier/*
+nginx/*
+db/*.sql
+scripts/*
+security/signing.env
+security/trusted-signing-key.pub.asc
+!nginx/verifier.log

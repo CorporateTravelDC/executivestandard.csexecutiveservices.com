@@ -1,0 +1,5 @@
+{
+  "_comment": "Copy to config.json on the Pi during build. config.json is GITIGNORED and MUST NOT be deployed to Cloudflare Pages — a token in the public output is a public token. The publish script reads these and (a) sets them as Pages secrets via wrangler, (b) templates the nginx token includes. Rotate by regenerating and re-publishing.",
+  "SECRET_RSS_TOKEN": "REPLACE_WITH_RANDOM_32CHAR_HEX",
+  "INVITE_TOKEN": "REPLACE_WITH_RANDOM_32CHAR_HEX"
+}

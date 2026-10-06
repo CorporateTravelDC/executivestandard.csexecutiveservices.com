@@ -1,0 +1,128 @@
+# members.executivestandard.csexecutiveservices.com — private members origin + gate.
+# Substack (abridged/public) lives at executivestandard.csexecutiveservices.com via
+# Substack custom domain; THIS host is the full private edition. DB-backed gate via
+# auth_request -> loopback verifier (127.0.0.1:8787). server_name EXCLUSIVE, no
+# default_server. Full standalone (listen 443) for LAN vendor-exit.
+#
+# 2026-09-27 adversarial fixes baked in:
+#  - auth_request HOISTED to server scope -> gates /_md/ too (closes the
+#    Accept: text/markdown critical bypass; internal rewrite can't escape auth).
+#  - security headers via include at each serving location (no-store survives).
+#  - token redeem via a real /redeem 302 (dead rewrite-phase 'if' removed).
+#  - private RSS feed served from its own ungated location (break can't skip auth).
+#  - error_page 5xx -> branded invite (verifier down still fails closed).
+#  - 2026-10-05: 401 -> 302 to invite.executivestandard.csexecutiveservices.com; sign-in is
+#    /redeem?x=<single-use hand-off> from that host (the ?token links are retired).
+#  - .sh/.py and source dirs 403'd.
+
+map $http_accept $wants_md { default 0; "~*text/markdown" 1; }
+map "$wants_md:$uri" $md_target {
+    default ""; "~^1:/$" "/_md/index.md"; "~^1:/(?<stem>.+)\.html$" "/_md/$stem.md";
+}
+map $uri $md_link_header {
+    default ""; "~^/(.*\.html)?$" "<$request_uri>; rel=\"alternate\"; type=\"text/markdown\"";
+}
+
+log_format es_noargs '$remote_addr - [$time_local] "$request_method $uri $server_protocol" $status $body_bytes_sent "$http_referer"';
+
+server {
+    listen 80;
+    server_name members.executivestandard.csexecutiveservices.com;
+    location ^~ /.well-known/acme-challenge/ { root /var/www/executivestandard.csexecutiveservices.com; }
+    location / { return 301 https://$host$request_uri; }
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name members.executivestandard.csexecutiveservices.com;
+
+    # TODO(cert): fill before enabling :443 (nginx -t fails safe without it).
+    ssl_certificate     /etc/letsencrypt/live/members.executivestandard.csexecutiveservices.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/members.executivestandard.csexecutiveservices.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    root /var/www/executivestandard.csexecutiveservices.com;
+    index index.html;
+    gzip on;
+    gzip_types text/html text/css application/javascript application/json text/markdown;
+
+    # --- GATE hoisted to server scope: applies to every location that does not
+    #     explicitly turn it off (so /_md/ is gated even via internal rewrite) ---
+    auth_request /_esauth;
+    error_page 401 = @invite_host;     # 2026-10-05: not signed in -> the invite host (promo code / invite link)
+    error_page 500 502 503 504 = @invite;   # verifier down -> branded static page (fails closed)
+
+    # --- UNGATED front-of-house ---
+    location ^~ /.well-known/ { auth_request off; add_header Cache-Control "public, max-age=3600" always; try_files $uri =404; }
+    location = /subscribe   { auth_request off; try_files /subscribe/index.html =404; }
+    location = /subscribe/  { auth_request off; try_files /subscribe/index.html =404; }
+    location ^~ /subscribe/ { auth_request off; }
+    location = /feed      { auth_request off; try_files /gate/probe.html =404; }
+    location = /feed.xml  { auth_request off; try_files /gate/probe.html =404; }
+    location = /index.xml { auth_request off; try_files /gate/probe.html =404; }
+    location = /rss       { auth_request off; try_files /gate/probe.html =404; }
+    location = /rss.xml   { auth_request off; try_files /gate/probe.html =404; }
+
+    # --- installable app (2026-10-05): the browser fetches the manifest WITHOUT
+    #     cookies, so a gated manifest = "not installable". Only the app shell is
+    #     public (manifest, icons, the service worker script); content stays gated.
+    location = /manifest.json { auth_request off; add_header Cache-Control "public, max-age=3600" always; add_header X-Content-Type-Options nosniff always; try_files /manifest.json =404; }
+    location ^~ /icons/       { auth_request off; add_header Cache-Control "public, max-age=86400" always; try_files $uri =404; }
+    location = /sw.js         { auth_request off; include /etc/nginx/conf.d/es-headers.conf; try_files /sw.js =404; }
+
+    # --- private RSS feed: token path IS the credential, ungated, own location ---
+    include /etc/nginx/executivestandard-rss-location*.conf;   # glob: non-fatal if not yet templated
+
+    # --- never served ---
+    location ~* ^/(config\.json|manifest\.sha256(\.asc)?|.*\.(sh|py|env))$ { return 403; }
+    location ~* ^/(security|functions|verifier|db|keys|_md/\.)(/|$)        { return 403; }
+
+    # --- token redeem: hand ?token to the verifier, which 302s to the clean URL ---
+    location = /redeem {
+        auth_request off;
+        proxy_pass http://127.0.0.1:8787/redeem;
+        proxy_pass_request_body off; proxy_set_header Content-Length "";
+        proxy_set_header X-Original-URI $request_uri;
+        proxy_set_header Cookie $http_cookie;
+    }
+
+    # --- gated content ---
+    location / {
+        include /etc/nginx/conf.d/es-headers.conf;
+        add_header Link '</llms.txt>; rel="llms.txt"' always;
+        add_header Link $md_link_header always;
+        if ($md_target != "") { rewrite ^ $md_target last; }   # /_md/ is gated now
+        try_files $uri $uri/ $uri.html =404;
+    }
+
+    location ^~ /_md/ {
+        # gated by the server-scope auth_request; reached only via the rewrite above.
+        internal;
+        alias /var/www/executivestandard.csexecutiveservices.com/_md/;
+        types { text/markdown md; } default_type text/markdown;
+        include /etc/nginx/conf.d/es-headers.conf;
+    }
+
+    location = /_esauth {
+        internal;
+        proxy_pass http://127.0.0.1:8787/auth;
+        proxy_pass_request_body off; proxy_set_header Content-Length "";
+        proxy_set_header X-Original-URI $request_uri;
+        proxy_set_header Cookie $http_cookie;
+    }
+    location @invite_host {
+        auth_request off;
+        include /etc/nginx/conf.d/es-headers.conf;
+        return 302 https://invite.executivestandard.csexecutiveservices.com/;
+    }
+    location @invite {
+        auth_request off;
+        include /etc/nginx/conf.d/es-headers.conf;
+        add_header X-Robots-Tag "noindex,nofollow" always;
+        try_files /gate/invite.html =404;
+    }
+
+    access_log /var/log/nginx/members-executivestandard-access.log es_noargs;
+    error_log  /var/log/nginx/members-executivestandard-error.log;
+}

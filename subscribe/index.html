@@ -1,0 +1,45 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Executive Standard — Subscribe at the Source</title>
+<meta name="robots" content="index,follow">
+<style>
+:root{color-scheme:light dark}
+body{margin:0;min-height:100vh;display:grid;place-items:center;font-family:Georgia,serif;background:#0f1216;color:#e9e6e0;padding:24px;line-height:1.65}
+.card{max-width:38rem}
+.mark{font-family:ui-monospace,monospace;font-size:.72rem;letter-spacing:.28em;text-transform:uppercase;color:#9c8f78;margin-bottom:1.4rem}
+h1{font-size:clamp(1.8rem,5vw,2.6rem);margin:0 0 1rem;font-weight:600;letter-spacing:-.01em}
+p{color:#b9b3a8;margin:0 0 1.1rem}
+.from{color:#d8b673;font-style:italic;font-size:.95rem;margin-bottom:1.4rem}
+a.cta{display:inline-block;margin:.6rem 0;padding:.8rem 1.7rem;border:1px solid #6d7d6f;color:#cfe0d1;text-decoration:none;font-family:ui-monospace,monospace;font-size:.82rem;letter-spacing:.08em;text-transform:uppercase}
+a.cta:hover{background:#16241c}
+.fine{font-size:.82rem;color:#7d8794;margin-top:1.6rem}
+.fine a{color:#9aa6b2}
+</style>
+<div class="card">
+<div class="mark">The Executive Standard</div>
+<p class="from" id="from"></p>
+<h1>Subscribe at the source.</h1>
+<p>The Executive Standard is published here, on its own infrastructure — Substack is a mirror. Access to the full archive is by invitation, issued directly by the publication, so your readership stays yours and ours, not a platform's.</p>
+<p>Request an invitation and we'll send you a private access link. It works on every device and never expires unless we say so.</p>
+<a class="cta" id="req" href="#">Request an invitation</a>
+<p class="fine">Prefer the platform? <a href="https://executivestandard.substack.com">Keep reading on the Substack mirror &rarr;</a><br>
+Questions or abuse: <a href="mailto:webmaster@csexecutiveservices.com">webmaster@csexecutiveservices.com</a></p>
+</div>
+<script>
+// Attribute the referral to a source (from ?source= or utm_source), so the
+// invitation you issue is tagged correctly in the entitlements table.
+(function(){
+  var q=new URLSearchParams(location.search);
+  var raw=(q.get("source")||q.get("utm_source")||"").toLowerCase();
+  var src = raw.indexOf("substack")>-1 ? "substack-direct"
+          : raw.indexOf("patreon")>-1 ? "patreon"
+          : raw.indexOf("linkedin")>-1 ? "linkedin"
+          : raw || "direct";
+  var camp=q.get("campaign")||q.get("utm_campaign")||"";
+  var subj="Executive%20Standard%20invitation%20request%20%5Bsource%3A"+encodeURIComponent(src)
+           +(camp?"%3B%20campaign%3A"+encodeURIComponent(camp):"")+"%5D";
+  document.getElementById("req").href=
+    "mailto:executivestandard@csexecutiveservices.com?subject="+subj
+    +"&bcc=webmaster@csexecutiveservices.com";
+  if(raw.indexOf("substack")>-1) document.getElementById("from").textContent="Welcome — you followed a link from the Substack mirror.";
+})();
+</script>

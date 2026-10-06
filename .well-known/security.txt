@@ -1,0 +1,6 @@
+# The Executive Standard — security & abuse contact
+Contact: mailto:webmaster@csexecutiveservices.com
+Expires: 2027-09-27T13:20:48Z
+Preferred-Languages: en
+Canonical: https://members.executivestandard.csexecutiveservices.com/.well-known/security.txt
+# Abuse reports and security disclosures both route here.
