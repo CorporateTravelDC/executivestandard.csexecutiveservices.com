@@ -55,7 +55,7 @@ if [[ ! -d "${REPO_DIR}" ]]; then
     exit 1
 fi
 
-echo "[1/5] Parsing frontmatter and converting Markdown to HTML..."
+echo "[1/6] Parsing frontmatter and converting Markdown to HTML..."
 
 # The python helper does the real work: parse frontmatter, convert the
 # body, clone the template, write <slug>.html, and emit the resolved
@@ -238,7 +238,7 @@ EXCERPT="$(sed -n '4p' <<< "${RESULT}")"
 
 echo "  wrote ${SLUG}.html (${TITLE})"
 
-echo "[2/5] Adding archive-list entry to every other page..."
+echo "[2/6] Adding archive-list entry to every other page..."
 
 cd "${SITE_DIR}"
 python3 - "${SLUG}" "${DATE_SHORT}" "${TITLE}" "${EXCERPT}" << 'PYEOF'
@@ -279,19 +279,31 @@ for fname in files:
 print(f"  updated {changed} files")
 PYEOF
 
-echo "[3/5] Copying site into versioned repo..."
+echo "[3/6] Copying site into versioned repo..."
 cp -r "${SITE_DIR}"/*.html "${REPO_DIR}/"
 mkdir -p "${REPO_DIR}/_md"
 cp "${SITE_DIR}/_md/${SLUG}.md" "${REPO_DIR}/_md/"
 
-echo "[4/5] Signing manifest (you'll be prompted for your GPG passphrase)..."
+echo "[4/6] Signing manifest (you'll be prompted for your GPG passphrase)..."
 cd "${REPO_DIR}"
 scripts/sign-manifest.sh
 
-echo "[5/5] Committing and pushing..."
+echo "[5/6] Committing and pushing (private)..."
 git add -A
-git commit -m "Add: ${TITLE}"
+git commit -S -m "Add: ${TITLE}"
 git push
+
+# 2026-10-16 (operator): every publish also refreshes the PUBLIC mirror
+# (executivestandard.csexecutiveservices.com): scrubbed, allowlisted tree with
+# the article ledger (hashes; gated texts never ship), signed and pushed by
+# scripts/site-public.sh in the dispatch repo. SKIP_PUBLIC_MIRROR=1 skips it.
+DISPATCH_REPO="${DISPATCH_REPO:-/opt/corporatetraveldc/private/ctdi-dispatch-internal}"
+if [[ "${SKIP_PUBLIC_MIRROR:-0}" == 1 ]]; then
+    echo "[6/6] Public mirror skipped (SKIP_PUBLIC_MIRROR=1)"
+else
+    echo "[6/6] Publishing the public mirror (GPG + SSH passphrases again)..."
+    bash "${DISPATCH_REPO}/scripts/site-public.sh" publish "${REPO_DIR}" --push
+fi
 
 echo ""
 echo "Done. Live at: https://executivestandard.csexecutiveservices.com/${SLUG}.html"
