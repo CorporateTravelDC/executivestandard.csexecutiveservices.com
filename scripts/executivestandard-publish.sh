@@ -306,4 +306,4 @@ else
 fi
 
 echo ""
-echo "Done. Live at: https://executivestandard.csexecutiveservices.com/${SLUG}.html"
+echo "Done. Live at: https://members.executivestandard.csexecutiveservices.com/${SLUG}.html"
