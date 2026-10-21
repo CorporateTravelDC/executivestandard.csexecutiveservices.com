@@ -303,6 +303,15 @@ if [[ "${SKIP_PUBLIC_MIRROR:-0}" == 1 ]]; then
 else
     echo "[6/6] Publishing the public mirror (GPG + SSH passphrases again)..."
     bash "${DISPATCH_REPO}/scripts/site-public.sh" publish "${REPO_DIR}" --push
+    # 2026-10-21 (operator): the public ledger is never older than the latest published article.
+    # It froze on 2026-10-06 for two weeks while every publish re-signed it; now a publish whose
+    # slug is missing from the public ledger fails loudly instead of looking done.
+    PUB_DIR="$(sed -n 's/^PUBLIC_DIR=//p' "${REPO_DIR}/PUBLIC.conf")"
+    if ! grep -qE "^[0-9a-f]{64}  [0-9-]{10}  ${SLUG}\$" "${PUB_DIR}/ARTICLE-LEDGER.md"; then
+        echo "[6/6] PUBLIC LEDGER IS STALE: ${SLUG} is not in ${PUB_DIR}/ARTICLE-LEDGER.md -- check LEDGER_GLOB in PUBLIC.conf" >&2
+        exit 1
+    fi
+    echo "[6/6] Public ledger lists ${SLUG}"
 fi
 
 echo ""
