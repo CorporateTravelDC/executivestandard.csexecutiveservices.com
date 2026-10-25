@@ -5,7 +5,8 @@
 # markdown file (with YAML-ish frontmatter: title, kicker, date, slug,
 # excerpt/description), converts it to the site's HTML template, adds it
 # to the "More memos" archive list on every other page, copies the site
-# into the versioned repo, signs the manifest, commits, and pushes.
+# into the versioned repo, signs the manifest, commits, pushes, refreshes the
+# public mirror, and regenerates the private Substack feed.
 #
 # Usage:
 #   executivestandard-publish.sh <article.md>
@@ -55,7 +56,7 @@ if [[ ! -d "${REPO_DIR}" ]]; then
     exit 1
 fi
 
-echo "[1/6] Parsing frontmatter and converting Markdown to HTML..."
+echo "[1/7] Parsing frontmatter and converting Markdown to HTML..."
 
 # The python helper does the real work: parse frontmatter, convert the
 # body, clone the template, write <slug>.html, and emit the resolved
@@ -238,7 +239,7 @@ EXCERPT="$(sed -n '4p' <<< "${RESULT}")"
 
 echo "  wrote ${SLUG}.html (${TITLE})"
 
-echo "[2/6] Adding archive-list entry to every other page..."
+echo "[2/7] Adding archive-list entry to every other page..."
 
 cd "${SITE_DIR}"
 python3 - "${SLUG}" "${DATE_SHORT}" "${TITLE}" "${EXCERPT}" << 'PYEOF'
@@ -279,16 +280,27 @@ for fname in files:
 print(f"  updated {changed} files")
 PYEOF
 
-echo "[3/6] Copying site into versioned repo..."
+echo "[3/7] Copying site into versioned repo..."
 cp -r "${SITE_DIR}"/*.html "${REPO_DIR}/"
 mkdir -p "${REPO_DIR}/_md"
 cp "${SITE_DIR}/_md/${SLUG}.md" "${REPO_DIR}/_md/"
+# 2026-10-24: the Substack edition rides along when it sits next to the article
+# (<slug>-substack.md) and is kept in the repo's substack/ folder; the private
+# feed gives Substack that edition, not the full article.
+EDITION="$(dirname "${INPUT_MD}")/${SLUG}-substack.md"
+if [[ -f "${EDITION}" ]]; then
+    mkdir -p "${REPO_DIR}/substack"
+    cp "${EDITION}" "${REPO_DIR}/substack/"
+    echo "  Substack edition: ${SLUG}-substack.md"
+else
+    echo "  !! no ${SLUG}-substack.md next to the article -- Substack will get the full article"
+fi
 
-echo "[4/6] Signing manifest (you'll be prompted for your GPG passphrase)..."
+echo "[4/7] Signing manifest (you'll be prompted for your GPG passphrase)..."
 cd "${REPO_DIR}"
 scripts/sign-manifest.sh
 
-echo "[5/6] Committing and pushing (private)..."
+echo "[5/7] Committing and pushing (private)..."
 git add -A
 git commit -S -m "Add: ${TITLE}"
 git push
@@ -299,19 +311,33 @@ git push
 # scripts/site-public.sh in the dispatch repo. SKIP_PUBLIC_MIRROR=1 skips it.
 DISPATCH_REPO="${DISPATCH_REPO:-/opt/corporatetraveldc/private/ctdi-dispatch-internal}"
 if [[ "${SKIP_PUBLIC_MIRROR:-0}" == 1 ]]; then
-    echo "[6/6] Public mirror skipped (SKIP_PUBLIC_MIRROR=1)"
+    echo "[6/7] Public mirror skipped (SKIP_PUBLIC_MIRROR=1)"
 else
-    echo "[6/6] Publishing the public mirror (GPG + SSH passphrases again)..."
+    echo "[6/7] Publishing the public mirror (GPG + SSH passphrases again)..."
     bash "${DISPATCH_REPO}/scripts/site-public.sh" publish "${REPO_DIR}" --push
     # 2026-10-21 (operator): the public ledger is never older than the latest published article.
     # It froze on 2026-10-06 for two weeks while every publish re-signed it; now a publish whose
     # slug is missing from the public ledger fails loudly instead of looking done.
     PUB_DIR="$(sed -n 's/^PUBLIC_DIR=//p' "${REPO_DIR}/PUBLIC.conf")"
     if ! grep -qE "^[0-9a-f]{64}  [0-9-]{10}  ${SLUG}\$" "${PUB_DIR}/ARTICLE-LEDGER.md"; then
-        echo "[6/6] PUBLIC LEDGER IS STALE: ${SLUG} is not in ${PUB_DIR}/ARTICLE-LEDGER.md -- check LEDGER_GLOB in PUBLIC.conf" >&2
+        echo "[6/7] PUBLIC LEDGER IS STALE: ${SLUG} is not in ${PUB_DIR}/ARTICLE-LEDGER.md -- check LEDGER_GLOB in PUBLIC.conf" >&2
         exit 1
     fi
-    echo "[6/6] Public ledger lists ${SLUG}"
+    echo "[6/7] Public ledger lists ${SLUG}"
+fi
+
+# 2026-10-24 (operator): the private Substack-drafts feed is regenerated on every
+# publish; until now only executive_standard_sync.py rebuilt it, and nothing runs
+# that, so the feed sat at 2026-10-03 while eight articles went out. The helper
+# keeps every existing item's guid (Substack re-imports a changed one as a new
+# draft), checks this slug is in, and never prints the secret path.
+# SKIP_PRIVATE_FEED=1 skips it.
+if [[ "${SKIP_PRIVATE_FEED:-0}" == 1 ]]; then
+    echo "[7/7] Private feed skipped (SKIP_PRIVATE_FEED=1)"
+else
+    echo "[7/7] Regenerating the private Substack feed..."
+    python3 "${REPO_DIR}/scripts/refresh-private-feed.py" --slug "${SLUG}" --site "${SITE_DIR}" \
+        --config "${REPO_DIR}/config.json"
 fi
 
 echo ""

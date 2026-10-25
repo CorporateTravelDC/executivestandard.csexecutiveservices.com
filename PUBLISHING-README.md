@@ -16,7 +16,10 @@ Per operator note 2026-09-28. Applies to every Executive Standard artifact stage
   matter** — the YAML block was stripped because it does not parse cleanly when the file is
   moved over and the pipeline generates HTML from the `.md` regardless. Do not feed the HTML
   to the pipeline; keep it as reference.
-- **`<slug>-substack.md` is the Substack paste version.** Fixed Substack structure
+- **`substack/<slug>-substack.md` is the Substack edition** (2026-10-24: every abridged
+  Substack copy lives in the repo's `substack/` folder, never in `_md/`; the private feed
+  sends Substack this edition, minus the ▶ PAYWALL line, and the full article only when
+  no edition exists). Originally the Substack paste version. Fixed Substack structure
   (title + subtitle → "Originally published at" callout → teaser first paragraph →
   subscription blurb → ▶ PAYWALL → body → subscribe block). For hand-pasting into Substack
   at T0, not for the blog pipeline.
