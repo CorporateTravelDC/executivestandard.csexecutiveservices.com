@@ -45,6 +45,7 @@ ada015eb98a1704c351df089fcba34dc6a5ad94c8f080a855dd67e7f70c88d0c  2026-09-08  wh
 ## `_md/*.md`
 
 ```
+ac534cf3b380e4b65ba808ece40e9de03b7d40b55d79df69fca57beee3bbd50d  2026-11-22  73956-aircraft-industry-missing-the-point
 8658b71e0812cf101db735e1633a2b0b6d1485a8b51fed6ff232d2a4882aef55  2026-09-29  default-on-is-not-consent
 09d475fd4d02844db692511daabc14474a4c75ee185fc1f16c053e97d2a194de  2026-09-08  even-the-guy-driving-your-uber-can
 1e41a18d23a57f64303bb924cdafa9231f7433fa79113173765f291af9bd9be3  2026-09-08  executive-protection
