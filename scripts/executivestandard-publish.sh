@@ -126,6 +126,20 @@ def inline(s):
     return s
 
 lines = body_md.splitlines()
+# 2026-11-23 (operator: "the double title again"): the template prints the title as <h1 class="headline">, so a body
+# that opens with the same "# Title" (or its start, after a retitle) and the subtitle in italics showed it twice.
+def _norm(t):
+    return re.sub(r"\s+", " ", t.strip().strip("*_").strip()).casefold()
+_k = 0
+while _k < len(lines) and not lines[_k].strip():
+    _k += 1
+if _k < len(lines) and re.match(r"^#\s+", lines[_k]) and _norm(title).startswith(_norm(re.sub(r"^#\s+", "", lines[_k]))):
+    del lines[_k]
+    while _k < len(lines) and not lines[_k].strip():
+        del lines[_k]
+    _sub = fm.get("subtitle") or ""
+    if _sub and _k < len(lines) and _norm(lines[_k]) == _norm(_sub):
+        del lines[_k]
 html_parts = []
 i = 0
 list_buffer = []

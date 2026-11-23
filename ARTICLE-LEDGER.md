@@ -49,6 +49,7 @@ e86d9a778cc7f69b832b0a7ff0f03a07556185b64c659672ea044ad5fe6d59f1  2026-11-22  73
 8658b71e0812cf101db735e1633a2b0b6d1485a8b51fed6ff232d2a4882aef55  2026-09-29  default-on-is-not-consent
 09d475fd4d02844db692511daabc14474a4c75ee185fc1f16c053e97d2a194de  2026-09-08  even-the-guy-driving-your-uber-can
 1e41a18d23a57f64303bb924cdafa9231f7433fa79113173765f291af9bd9be3  2026-09-08  executive-protection
+fed338eedb7c4bdae62ae55c8edfad3d190bff9fbc0e3235e0b4a55d4d14ee3a  2026-11-23  executive-run-sheet-01-when-the-search-stops
 bfb2956cb2acf887f0cc22fc7693d53a89b4c28421220632102cbeb550f1ba44  2026-11-22  fieldcraft-01-standard-before-the-door-opens
 b6060e6a63ff65b0d3299003508dd7959d37826056620d975e30ad1bbc125ce1  2026-11-22  fieldcraft-02-the-pickup-is-a-handoff
 d5fd6f3b35b23241f13ed7db96e8c9829e87bb335775219ce64267b93ce4fdc4  2026-10-20  five-tiers-one-account
